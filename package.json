@@ -1,0 +1,44 @@
+{
+  "name": "openclaw-archiver",
+  "version": "0.1.0",
+  "description": "Web archiver plugin for OpenClaw — scrape, extract, and serve readable web pages",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "linkedom": "^0.18.0",
+    "playwright-extra": "^4.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "peerDependencies": {
+    "openclaw": ">=2026.3.11"
+  },
+  "peerDependenciesMeta": {
+    "openclaw": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "openclaw": ">=2026.3.11",
+    "typescript": "^5.7.0"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "license": "MIT",
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "archiver",
+    "scraper",
+    "web"
+  ]
+}
