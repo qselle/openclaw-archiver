@@ -21,19 +21,37 @@
     th { font-weight: 600; color: #666; font-size: 0.85rem; text-transform: uppercase; }
     a { color: #4a90d9; text-decoration: none; }
     a:hover { text-decoration: underline; }
-    td:last-child { white-space: nowrap; color: #999; font-size: 0.85rem; }
     tr:hover { background: #f5f5f5; }
+    .date { white-space: nowrap; color: #999; font-size: 0.85rem; }
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #c44;
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 3px;
+    }
+    .delete-btn:hover { background: #fee; }
+    .empty { color: #999; padding: 2rem 0; text-align: center; }
   </style>
 </head>
 <body>
   <h1>Archive</h1>
   <table>
     <thead>
-      <tr><th>Title</th><th>Source</th><th>Archived</th></tr>
+      <tr><th>Title</th><th>Source</th><th>Archived</th><th></th></tr>
     </thead>
     <tbody>
       {{rows}}
     </tbody>
   </table>
+  <script>
+    function deletePage(id) {
+      if (!confirm('Delete this archive?')) return;
+      fetch('/archiver/' + id, { method: 'DELETE' })
+        .then(r => { if (r.ok) location.reload(); else alert('Failed to delete'); });
+    }
+  </script>
 </body>
 </html>

@@ -29,6 +29,7 @@ function resolveConfig(raw: Record<string, unknown> | undefined): ArchiverConfig
       headless: (browserRaw.headless as boolean) ?? true,
       timeout: (browserRaw.timeout as number) ?? 30_000,
       userDataDir: browserRaw.userDataDir as string | undefined,
+      proxy: browserRaw.proxy as string | undefined,
     },
   };
 }
@@ -136,14 +137,42 @@ const plugin = {
     api.registerCommand({
       name: "archive",
       description: "Archive a web page: /archive <url>",
-      handler: (_ctx) => {
-        return {
-          text: [
-            `Use the archive_page tool with the URL to archive a page.`,
-            `Viewer: ${config.baseUrl}`,
-            `Storage: ${config.storagePath}`,
-          ].join("\n"),
-        };
+      acceptsArgs: true,
+      handler: async (ctx) => {
+        const url = ctx.args?.trim();
+        if (!url) {
+          return {
+            text: [
+              `Usage: /archive <url>`,
+              `Viewer: ${config.baseUrl}`,
+              `Storage: ${config.storagePath}`,
+            ].join("\n"),
+          };
+        }
+
+        try {
+          logger.info(`archiver: /archive command for ${url}`);
+          const { fullHtml, title } = await scrapePage(url, config.browser);
+          const extracted = extractReadableContent(url, fullHtml, title);
+          const stored = savePage(storageConfig, extracted);
+          const link = `${config.baseUrl}/${stored.id}`;
+          logger.info(`archiver: saved ${url} → ${link}`);
+
+          return {
+            text: [
+              `Archived: **${stored.title}**`,
+              stored.byline ? `By: ${stored.byline}` : null,
+              ``,
+              link,
+            ]
+              .filter(Boolean)
+              .join("\n"),
+          };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          logger.error(`archiver: /archive failed for ${url}: ${msg}`);
+          return { text: `Failed to archive: ${msg}` };
+        }
       },
     });
   },

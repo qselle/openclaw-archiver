@@ -22,7 +22,8 @@
         "properties": {
           "headless": { "type": "boolean", "default": true },
           "timeout": { "type": "number", "default": 30000, "description": "Page load timeout in ms" },
-          "userDataDir": { "type": "string", "description": "Persistent browser profile directory" }
+          "userDataDir": { "type": "string", "description": "Persistent browser profile directory" },
+          "proxy": { "type": "string", "description": "Proxy server URL (e.g. socks5://100.x.x.x:1080)" }
         }
       }
     }

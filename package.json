@@ -1,5 +1,5 @@
 {
-  "name": "openclaw-archiver",
+  "name": "archiver",
   "version": "0.1.0",
   "description": "Web archiver plugin for OpenClaw — scrape, extract, and serve readable web pages",
   "type": "module",

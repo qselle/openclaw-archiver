@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, readdirSync, existsSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
 import type { ScrapedPage } from "../scraper/index.js";
@@ -46,6 +46,19 @@ export function getPageHtml(config: StorageConfig, id: string): string | null {
   const htmlPath = join(config.storagePath, `${id}.html`);
   if (!existsSync(htmlPath)) return null;
   return readFileSync(htmlPath, "utf-8");
+}
+
+export function deletePage(config: StorageConfig, id: string): boolean {
+  const metaPath = join(config.storagePath, `${id}.json`);
+  const htmlPath = join(config.storagePath, `${id}.html`);
+  if (!existsSync(metaPath)) return false;
+  try {
+    unlinkSync(metaPath);
+    if (existsSync(htmlPath)) unlinkSync(htmlPath);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function listPages(config: StorageConfig): StoredPage[] {

@@ -2,7 +2,7 @@ import { createServer, type Server, type IncomingMessage, type ServerResponse } 
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getPage, getPageHtml, listPages, type StorageConfig } from "../storage/index.js";
+import { getPage, getPageHtml, listPages, deletePage, type StorageConfig } from "../storage/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -38,10 +38,11 @@ export function createArchiveServer(
 
   const handler = (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? "/", `http://localhost:${port}`);
-    const path = url.pathname;
+    // Strip known prefixes so it works behind tailscale serve --set-path
+    const rawPath = url.pathname.replace(/^\/(archiver|archive)/, "") || "/";
 
-    // GET /archive — list all pages
-    if (path === "/archive" || path === "/archive/") {
+    // GET / — list all pages
+    if (rawPath === "/") {
       const pages = listPages(config);
 
       if (req.headers.accept?.includes("application/json")) {
@@ -54,9 +55,10 @@ export function createArchiveServer(
         .map(
           (p) =>
             `<tr>
-              <td><a href="/archive/${p.id}">${escapeHtml(p.title)}</a></td>
+              <td><a href="/archiver/${p.id}">${escapeHtml(p.title)}</a></td>
               <td><a href="${escapeHtml(p.url)}" target="_blank">${escapeHtml(p.url)}</a></td>
-              <td>${new Date(p.scrapedAt).toLocaleString()}</td>
+              <td class="date">${new Date(p.scrapedAt).toLocaleString()}</td>
+              <td><button class="delete-btn" onclick="deletePage('${p.id}')">&times;</button></td>
             </tr>`,
         )
         .join("\n");
@@ -65,10 +67,20 @@ export function createArchiveServer(
       return;
     }
 
-    // GET /archive/:id — serve a page
-    const match = path.match(/^\/archive\/([a-f0-9]+)$/);
+    // /:id routes
+    const match = rawPath.match(/^\/([a-f0-9]+)$/);
     if (match) {
       const id = match[1];
+
+      // DELETE /:id — delete a page
+      if (req.method === "DELETE") {
+        const ok = deletePage(config, id);
+        res.writeHead(ok ? 200 : 404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok }));
+        return;
+      }
+
+      // GET /:id — serve a page
       const page = getPage(config, id);
       if (!page) {
         res.writeHead(404);
@@ -76,14 +88,12 @@ export function createArchiveServer(
         return;
       }
 
-      // Raw HTML content
       if (url.searchParams.has("raw")) {
         const html = getPageHtml(config, id);
         sendHtml(res, html ?? "");
         return;
       }
 
-      // Rendered with template
       const template = loadTemplate();
       const rendered = template
         .replace("{{title}}", escapeHtml(page.title))
@@ -96,8 +106,8 @@ export function createArchiveServer(
       return;
     }
 
-    // Fallback: redirect to /archive
-    res.writeHead(302, { Location: "/archive" });
+    // Fallback: redirect to list
+    res.writeHead(302, { Location: "/archiver" });
     res.end();
   };
 
